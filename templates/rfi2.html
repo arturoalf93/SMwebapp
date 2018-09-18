@@ -1,0 +1,82 @@
+{% extends 'base/base.html'%}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+
+   <div class="container">
+        {% if comments %}
+            {% for comment in comments.items %}
+                <div class="row">
+                    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                        <hr>
+                        <h2 class="section-heading">{{ comment.username }}</h2>
+                        <h5>{{ date_format(comment.created_date) }}</h5>
+                        <p>{{ comment.text }}</p>
+                    </div>
+                </div>
+            {% endfor %}    
+        {% endif %}
+    </div>
+
+        <h5>test</h5>
+<head>
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+}
+th {
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+
+<table style="width:100%">
+    <tr>
+        {% for item in quarter_columns %}
+            <th colspan="{{ item[1]|length }}">Q{{ item[0][1] }} {{ item[0][0] }}</th>
+        {% endfor %}
+    </tr>
+    <tr>
+        {% for item in columns_header %}
+            {% if item[1] == 5 and item[0][2] == 1 %}
+                <th>Self-Score</th>
+            {% elif item[1] == 5 and item[0][2] == 2 %}
+                <th>Self-Score (2)</th>
+            {% elif item[1] == 6 and item[0][2] == 1 %}
+                <th>Self-Description</th>
+            {% elif item[1] == 6 and item[0][2] == 2 %}
+                <th>Self-Description (2)</th>
+            {% elif item[1] == 7 %}
+                <th>Attachments/Supporting Docs and Location/Link</th>
+            {% elif item[1] == 8 and item[0][2] == 1 %}
+                <th>SM Score</th>
+            {% elif item[1] == 8 and item[0][2] == 2 %}
+                <th>SM Score (2)</th>
+            {% elif item[1] == 9 and item[0][2] == 1 %}
+                <th>Analyst Notes</th>
+            {% elif item[1] == 9 and item[0][2] == 2 %}
+                <th>Analyst Notes (2)</th>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% if rfielements_info_show %}
+        {% for row in rfielements_info_show %}
+            <tr>
+                {% for item in row %}
+                    {% if item != None %}
+                        <td>{{ item }}</td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    {% endif %}
+</table>
+
+{% endblock %}

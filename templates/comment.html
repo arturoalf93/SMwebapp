@@ -1,0 +1,54 @@
+{% extends 'base/base.html' %}
+
+{% block title %} {{ title }} {% endblock %}
+
+{% block content %}
+<!--
+	<h2>Hello world.</h2>
+
+	{% from "_macro.html" import show_list_h %}
+
+	{{ show_list_h( title ) }}
+
+	{% from "_macro.html" import render_field %}
+-->
+	<br>
+	<br>
+
+	<div class="container">
+     <div class="row">
+        <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+           
+            <br>
+            <br>
+            
+            <form name="sentMessage" id="contactForm" method="POST">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 floating-label-form-group controls">
+                         {{ render_field(form.comment, class='form-control' ) }} <!--form-control, from bootsrap, makes the input a bit more elegant-->
+                        <p class="help-block text-danger"></p>
+                    </div>
+                </div>
+
+                {{ form.honeypot }}
+     
+                <br>
+                <div id="success"></div><!-- don't know what this success is-->
+                <div class="row">
+                    <div class="form-group col-xs-12">
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </div>
+                </div>
+            </form>
+          </div>
+      </div>
+  </div>
+
+    <hr>
+		
+
+
+{% endblock %}

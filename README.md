@@ -1,2 +1,1 @@
-# SMwebapp
-solmaps
+# CFwebapp

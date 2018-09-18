@@ -1,0 +1,17 @@
+{% extends 'base/base.html'%}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+
+<h1>{{ title }} Portal</h1>
+<br>
+<h2>RFI Submissions</h2>
+
+{% for item in module_names %}
+    <a href={{ urllib_parse_quote( url_for(request.endpoint) + vendor_name + '/' + item) }}>{{ item }}</a><br> 
+    <!-- <a href={{ url_for(request.endpoint, vendor_name = vendor_name, item = item) }}>{{ item }}</a> --><!-- http://localhost:5000/rfi/Buyer%20Quest?item=Procure+to+Pay maybe helpful in the future. -->
+{% endfor %} 
+<br>
+<h2>Customer References</h2>
+
+
+{% endblock %}
