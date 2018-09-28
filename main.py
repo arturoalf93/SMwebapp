@@ -30,7 +30,7 @@ from flask_mail import Message
 import threading  #to send the emails in the background so the app is faster
 from flask import copy_current_request_context
 #after CF
-from models import vendors, rfielements, suitemodcatelem, vendors_rfi, suitemodules, suitemodcat, category_names
+from models import vendors, rfielements, suitemodcatelem, vendors_rfi, suitemodules, suitemodcat, category_names, element_names, elementvariants, current_quarteryear
 
 #####Just for creating raw MySQL queries########
 from sqlalchemy import create_engine
@@ -40,15 +40,15 @@ eng = create_engine(DevelopmentConfig.SQLALCHEMY_DATABASE_URI)
 import sys
 import urllib.parse #to encode urls
 import pandas as pd
+pd.set_option('display.expand_frame_repr', False) #just to make the print of pandas wider
+from sqlalchemy import desc
+import json
 
 
 
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig) #here is where we decide if Development or Production.
-#app.jinja_env.globals.update( urllib.parse.quote = urllib_parse_quote )
-#app.jinja_env.globals.update['urllib.parse.quote'] = urllib.parse.quote
-#app.jinja_env.globals.update(__builtins__.__dict__)
 
 #before using config:
 #app.secret_key = 'my_secret_key' #though it is a good practice to use os.get() to get the secret key, and not write it in the code
@@ -166,7 +166,7 @@ def comment():
 		flash(success_message)
 
 	title = "Flask Course"
-	return render_template('comment.html', title = title, form = comment_form)
+	return render_template('comment.html', title = title, comment_form = comment_form)
 
 @app.route('/create', methods = ['GET', 'POST'])
 def create():
@@ -213,11 +213,15 @@ def after_request(response):
 
 
 @app.route('/rfi/', methods=['GET'])
-@app.route('/rfi/<vendor_name>', methods=['GET'], defaults={ 'module_name' : None})
-@app.route('/rfi/<vendor_name>/<module_name>', methods=['GET', 'POST'])
+@app.route('/rfi/<vendor_name>/', methods=['GET'], defaults={ 'module_name' : None})
+@app.route('/rfi/<vendor_name>/<module_name>/', methods=['GET', 'POST'])
 def rfi(vendor_name, module_name):
 
 	vendorid = vendors.query.filter_by(vendor_name = vendor_name).add_columns(vendors.vendorid).first()[1]
+	current_quarter = current_quarteryear.query.add_columns(current_quarteryear.quarter).first()[1]
+	current_year = current_quarteryear.query.add_columns(current_quarteryear.year).first()[1]
+	print('current quarter:', current_quarter, current_year)
+
 	if module_name is None:
 		title = vendor_name
 		
@@ -245,14 +249,23 @@ def rfi(vendor_name, module_name):
 		print('suitemod_ids_raw',suitemod_ids_raw)
 
 		module_names_list = []
-		for item in suitemod_ids_raw: module_names_list.append(suitemodules.query.filter_by(suitemodid = item[1]).add_columns(suitemodules.suitemod_name).first()[1])
+		for item in suitemod_ids_raw: module_names_list.append(suitemodules.query.filter_by(suitemodid = item[1]).order_by(desc(suitemodules.update_date)).add_columns(suitemodules.suitemod_name).first()[1])
 
 		return render_template('rfi:vendor.html', title = title, vendor_name = vendor_name, module_names = module_names_list, urllib_parse_quote = urllib.parse.quote)
 	
 	else:
 		title = vendor_name + ' - ' + module_name
-
 		suitemodid = suitemodules.query.filter_by(suitemod_name = module_name).add_columns(suitemodules.suitemodid).first()[1]
+		participating_this_quarter = vendors_rfi.query.filter_by(vendor_id = vendorid).filter_by(suitemod_id = suitemodid).add_columns(vendors_rfi.participating_this_quarter).first()[1]
+		current_round = None
+		form = forms.ElementForm(request.form)
+
+
+		if participating_this_quarter == 1:
+			current_round = vendors_rfi.query.filter_by(vendor_id = vendorid).filter_by(suitemod_id = suitemodid).add_columns(vendors_rfi.current_round).first()[1]
+
+		print('participating_this_quarter', participating_this_quarter, '\ncurrent_round', current_round)
+
 		print('suitemodid', suitemodid)
 		suitemodcat_list_raw = suitemodcat.query.filter_by(suitemod_id = suitemodid).add_columns(suitemodcat.suitemodcatid, suitemodcat.category_name_id).all()
 		suitemodcat_list = []
@@ -274,18 +287,13 @@ def rfi(vendor_name, module_name):
 				ids_list[index][1].append([item2[2],item2[3],item2[4]])
 				smce_ids_list.append(item2[2])
 
-		print('ids_list', ids_list)
 		print('smce_ids_list', smce_ids_list)
+
+		print('ids_list[0]', ids_list[0])
 
 		names_list = []
 		for item in category_name_ids_list:
 			names_list.append(category_names.query.filter_by(category_nameid = item).add_columns(category_names.category_name).first()[1])
-
-		print('names_list', names_list)
-
-
-		#TRYING WITHOUT PANDAS
-
 
 		'''rfielements_info:
 		0 vendor_id
@@ -300,6 +308,186 @@ def rfi(vendor_name, module_name):
 		9 analyst_notes
 		'''
 		rfielements_info_raw = rfielements.query.filter_by(vendor_id = vendorid).filter(rfielements.smce_id.in_(smce_ids_list)).add_columns(rfielements.vendor_id, rfielements.smce_id, rfielements.quarter, rfielements.year, rfielements.round, rfielements.self_score, rfielements.self_description, rfielements.attachment_id, rfielements.sm_score, rfielements.analyst_notes).all()
+
+		df = pd.DataFrame(rfielements_info_raw)
+
+		print('-----------------------------------------------------------------')
+
+		df['yqr'] = df['year'].astype(str) + '-' + df['quarter'].astype(str) + '-' + df['round'].astype(str)
+
+		yqdict = dict()
+		for item in df.yqr.unique():
+			yqdict[item] = df[df.yqr == item].drop(columns=['rfielements', 'vendor_id', 'quarter', 'year', 'round', 'smce_id', 'yqr']).dropna(how='all', axis=1)
+			'''print('------------', item)
+			print(yqdict[item].shape)
+			print(yqdict[item].head(5))'''
+		yqr_headers_dict = [ {item:yqdict[item].columns.tolist()} for item in sorted(yqdict.keys()) ]
+		print('yqr_headers_dict', yqr_headers_dict)
+
+		#delete current_year & current_quarter item
+		indexes = [] #this will be necessary in case we have to delete two rounds
+		for index, dictionary in enumerate(yqr_headers_dict):
+			for key in dictionary:
+				if int(key.split('-')[0]) == current_year and int(key.split('-')[1]) == current_quarter:
+					indexes.append(index)
+		for index in reversed(indexes): #it must be backwards since we are removing elements from the list.
+			del yqr_headers_dict[index]
+
+
+		yq_headers2 = []
+		yqr_headers_len = []
+		for item in yqr_headers_dict:
+			yq_headers2.append(list(item.keys()))
+			yqr_headers_len.append(len(list(item.values())[0]))
+		print('yqr_headers_len', yqr_headers_len)
+
+		for item1, item2 in zip(yq_headers2, yqr_headers_len): item1.append(item2)
+		print('yq_headers2', yq_headers2)
+
+		yq_headers = []
+		for item in yq_headers2:
+			if [item[0].split('-')[0] + '-' + item[0].split('-')[1]] not in yq_headers: yq_headers.append([item[0].split('-')[0] + '-' + item[0].split('-')[1]])
+		for item in yq_headers: item.append(0)
+		for item1 in yq_headers2:
+			aux = item1[0].split('-')[0] + '-' + item1[0].split('-')[1]
+			for item2 in yq_headers:
+				if aux == item2[0]: 
+					item2[1] += item1[1]
+					break
+		for item in yq_headers: item[0] = [item[0].split('-')[0], item[0].split('-')[1]]
+		#yq_headers will define the fist header.
+		print('yq_headers', yq_headers)
+
+		#yqr_headers will define the second header
+		yqr_headers2 = []
+		yqr_headers_columns = []
+		yqr_headers3 = []
+		yqr_headers=[]
+
+		for item in yqr_headers_dict:
+			yqr_headers2.append(list(item.keys()))
+			yqr_headers_columns.append(list(item.values())[0])
+
+		for item1 in yqr_headers_columns:
+			for item2 in range(len(item1)):
+				if item1[item2] == 'self_score': item1[item2] = 5
+				elif item1[item2] == 'self_description': item1[item2] = 6
+				elif item1[item2] == 'attachment_id': item1[item2] = 7
+				elif item1[item2] == 'sm_score': item1[item2] = 8
+				elif item1[item2] == 'analyst_notes': item1[item2] = 9
+
+		for item1, item2 in zip(yqr_headers2, yqr_headers_columns): yqr_headers3.append(((int(item1[0].split('-')[0]), int(item1[0].split('-')[1]), int(item1[0].split('-')[2])), item2))
+		for item1 in yqr_headers3:
+			for item2 in item1[1]:
+				yqr_headers.append((item1[0], item2))
+				
+		print('yqr_headers3', yqr_headers3)
+		print('yqr_headers_columns', yqr_headers_columns)
+		print('yqr_headers', yqr_headers)
+
+		#for item1 in ids_list:
+			#for item2 in item1[1]:
+				#print('smceid', item2[0], 'variantid', item2[2] ,elementvariants.query.filter_by(variantid = item2[2]).add_columns(elementvariants.example_scoring).first()[1])
+
+		width = 3 + len(yqr_headers)
+		print('width', width)
+
+		info = [] #[category,[element_name, spec, example scoring, ss_q1y1, sd_q1y1, at_q1y1, sm_q1y1, an_q1y1, ss_q2y1, sd_q2y1, at_q2y1, sm_q2y1, an_q2y1...], smceid, [ss_current_round_1] ]
+		for item1 in ids_list:
+			cat_name_id = suitemodcat.query.filter_by(suitemodcatid = item1[0]).add_columns(suitemodcat.category_name_id).first()[1]
+			cat_name = category_names.query.filter_by(category_nameid = cat_name_id).add_columns(category_names.category_name).first()[1]
+			info.append(cat_name)
+			for item2 in item1[1]:
+				row = []
+				elem_name = element_names.query.filter_by(element_nameid = item2[1]).add_columns(element_names.elementname).first()[1]
+				row.append([elem_name])
+				spec = elementvariants.query.filter_by(variantid = item2[2]).add_columns(elementvariants.specification).first()[1]
+				row[0].append(spec)
+				es = elementvariants.query.filter_by(variantid = item2[2]).add_columns(elementvariants.example_scoring).first()[1]
+				row[0].append(es)
+				data = None
+				for item3 in yqr_headers:
+					col = None
+					if item3[1] == 5: col = 'self_score'
+					elif item3[1] == 6: col = 'self_description'
+					elif item3[1] == 7: col = 'attachment_id'
+					elif item3[1] == 8: col = 'sm_score'
+					elif item3[1] == 9: col = 'analyst_notes'
+					try:
+						data = df.loc[(df['smce_id'] == item2[0]) & (df['year'] == item3[0][0]) & (df['quarter'] == item3[0][1]) & (df['round'] == item3[0][2]), col].tolist()[0]
+					except:
+						data = None
+					row[0].append(data)
+				row.append(item2[0]) #appending smceid
+				try:
+					current_round_1 = rfielements.query.filter_by(vendor_id = vendorid, smce_id = item2[0], quarter = current_quarter, year = current_year, round = 1).order_by(desc(rfielements.update_date)).add_columns(rfielements.self_score, rfielements.self_description, rfielements.attachment_id, rfielements.sm_score, rfielements.analyst_notes).first()[1:6]
+				except:
+					current_round_1 = [None, None, None, None, None]
+				row.append(current_round_1)
+				try:
+					current_round_2 = rfielements.query.filter_by(vendor_id = vendorid, smce_id = item2[0], quarter = current_quarter, year = current_year, round = 2).order_by(desc(rfielements.update_date)).add_columns(rfielements.self_score, rfielements.self_description, rfielements.attachment_id, rfielements.sm_score, rfielements.analyst_notes).first()[1:6]
+				except:
+					current_round_2 = [None, None, None, None, None]
+				row.append(current_round_2)
+					
+				info.append(row)
+		#print('info\n', info)
+
+		modified_smceids = []
+
+		if request.method == 'POST': #When the button 'Submit updates' is pressed
+			for item1 in info:
+				if type(item1) is list:
+					'''if request.form['ss-' + str(current_round) + '-' + str(item1[1])] == "" and item1[1+current_round][0] != None:
+						print('case a', item1[1])
+						element_row = rfielements(vendor_id = vendorid, smce_id = item1[1], quarter = current_quarter, year = current_year, round = current_round, self_score = None, self_description = request.form['sd-' + str(current_round) + '-' + str(item1[1])],  attachment_id = None, sm_score = item1[1+current_round][3], analyst_notes = item1[1+current_round][4], user_id = None)
+						db.session.add(element_row)
+						modified_smceids.append(item1[1])
+					else:
+						if request.form['ss-' + str(current_round) + '-' + str(item1[1])] != "":
+							if item1[1+current_round][0] != int(request.form['ss-' + str(current_round) + '-' + str(item1[1])]):
+								print('case b', item1[1])
+								element_row = rfielements(vendor_id = vendorid, smce_id = item1[1], quarter = current_quarter, year = current_year, round = current_round, self_score = int(request.form['ss-' + str(current_round) + '-' + str(item1[1])]), self_description = request.form['sd-' + str(current_round) + '-' + str(item1[1])],  attachment_id = None, sm_score = item1[1+current_round][3], analyst_notes = item1[1+current_round][4], user_id = None)
+								db.session.add(element_row)
+								modified_smceids.append(item1[1])
+								'''
+					change = 0 #flag to update current element
+
+					#Check if there is a change in SS
+					if request.form['ss-' + str(current_round) + '-' + str(item1[1])] == "" and item1[1+current_round][0] != None: #if there was a SS but now it's NULL
+						new_ss = None
+						change = 1
+					elif request.form['ss-' + str(current_round) + '-' + str(item1[1])] != "" and item1[1+current_round][0] != int(request.form['ss-' + str(current_round) + '-' + str(item1[1])]): #if the SS has changed from one number to another
+						new_ss = int(request.form['ss-' + str(current_round) + '-' + str(item1[1])])
+						change = 1
+					else: new_ss = item1[1+current_round][0] #just in case there is a change in SD, it's not really a new SS
+
+					#Check if there is a change in SD
+					if request.form['sd-' + str(current_round) + '-' + str(item1[1])] == "" and item1[1+current_round][1] != None: #if there was a SD but now it's NULL
+						new_sd = None
+						change = 1
+					elif request.form['sd-' + str(current_round) + '-' + str(item1[1])] != "" and item1[1+current_round][1] != request.form['sd-' + str(current_round) + '-' + str(item1[1])]: #if the SD has changed
+						new_sd = request.form['sd-' + str(current_round) + '-' + str(item1[1])]
+						change = 1
+
+					if change == 1:
+						element_row = rfielements(vendor_id = vendorid, smce_id = item1[1], quarter = current_quarter, year = current_year, round = current_round, self_score = new_ss, self_description = new_sd,  attachment_id = None, sm_score = item1[1+current_round][3], analyst_notes = item1[1+current_round][4], user_id = None)
+						db.session.add(element_row)
+						modified_smceids.append(item1[1])
+			if len(modified_smceids) > 0:
+				db.session.commit()
+				print('commit done')
+
+			if len(modified_smceids) == 0:
+				flash('No updates where received')
+			elif len(modified_smceids) == 1:
+				flash('Updates saved for ' + str(len(modified_smceids)) + ' element')
+			elif len(modified_smceids) > 1:
+				flash('Updates saved for ' + str(len(modified_smceids)) + ' elements')
+
+			return redirect(urllib.parse.quote( url_for(request.endpoint) + vendor_name))
+
+
 
 		rfielements_info=[]
 		quarters_header = set()
@@ -351,45 +539,23 @@ def rfi(vendor_name, module_name):
 				if row[j] is not None:
 					index2 = columns_header.index(((row[3], row[2], row[4]),j))
 					rfielements_info_show[index1][index2] = row[j]
-		#print('rfielements_info_show', rfielements_info_show )
 
 		print('quarters_header', quarters_header)
 		print('columns_header', columns_header)
 
-		return render_template('rfi:vendor:module.html', title = title, vendor_name = vendor_name, module_name = module_name, urllib_parse_quote = urllib.parse.quote, rfielements_info_show = rfielements_info_show, quarters_header = quarters_header, columns_header = columns_header)
+		return render_template('rfi:vendor:module.html', title = title, vendor_name = vendor_name, module_name = module_name, urllib_parse_quote = urllib.parse.quote, 
+		info = info, yq_headers = yq_headers, yqr_headers = yqr_headers, width = width, current_quarter = current_quarter, current_year = current_year,
+		participating_this_quarter = participating_this_quarter, current_round = current_round, form = form, modified_smceids = modified_smceids)
 		
-		#TRYING WITH PANDAS
-
-		rfielements_info_raw = rfielements.query.filter_by(vendor_id = vendorid).filter(rfielements.smce_id.in_(smce_ids_list)).add_columns( rfielements.smce_id, rfielements.quarter, rfielements.year, rfielements.round, rfielements.self_score, rfielements.self_description, rfielements.attachment_id, rfielements.sm_score, rfielements.analyst_notes).all()
-		df = pd.DataFrame(rfielements_info_raw)
-		df = df.drop('rfielements', 1)
-		#print('df \n', df.head())
-		#print('df \n')
-		df_qyr = df.groupby(['year', 'quarter', 'round']).size().reset_index().rename(columns={0:'count'})
-
-		'''
-	year  quarter  round  count
-0  2017        2      1    106
-1  2017        4      1     34
-2  2018        1      1     31'''
 		
-		#print(df_qyr)
-		#print(df_qyr.iloc[1])
-		test = []
-		for index, row in df_qyr.iterrows():
-			test.append([row['year'], row['quarter'], row['round']])
-		#print('test \n', test)
-		#print('type(test)', type(test))
+@app.route('/_test', methods = ['POST'])
+def _test():
+	print(request.form['key'])
+	modified_smceids = request.form['key']
+	#validate missing here
+	response = {testkey: 'data from flask'}
+	return response
 
-		df_qy = df.groupby(['year', 'quarter']).size().reset_index().rename(columns={0:'count'})
-		#print(df_qy)
-		#print(pd.pivot_table(df, index=['year', 'quarter', 'round', 'smce_id'], values = ['self_score']))
-
-		#df_qyr_self_score = df.groupby(['year', 'quarter', 'round', 'self_score']).size().reset_index().rename(columns={0:'count'})
-		#print(df_qyr_self_score)
-
-
-		#return render_template('rfi:vendor:module.html', title = title, vendor_name = vendor_name, module_name = module_name, urllib_parse_quote = urllib.parse.quote, rfielements_info_show = rfielements_info_show, quarters_header = quarters_header, columns_header = columns_header)
 
 db.init_app(app) #this was supposed to be inside if __name__ but it didn't work: https://stackoverflow.com/questions/30764073/sqlalchemy-extension-isnt-registered-when-running-app-with-gunicorn
 mail.init_app(app) #same as db.init_app

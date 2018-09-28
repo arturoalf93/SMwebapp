@@ -3,6 +3,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 
 #afterCF
+
+#for the timestamps I've seen this: default=datetime.utcnow), maybe it's better that datetime.now
 '''
 https://stackoverflow.com/questions/47622988/sqlalchemy-float8-stored-in-mysql-with-2-decimal-places is this necessary
 
@@ -66,13 +68,12 @@ class comments(db.Model):
 
 
 
-
 class category_names(db.Model):
 	category_nameid = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = True)
 	suitemodcat = db.relationship('suitemodcat')
 	category_name = db.Column(db.String(45), nullable = False, autoincrement = False)
 
-class current_quarter(db.Model):
+class current_quarteryear(db.Model):
 	quarter = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
 	year = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
 
@@ -125,7 +126,7 @@ class rfielements(db.Model):
 	attachment_id = db.Column(db.Integer, autoincrement = False)
 	sm_score = db.Column(db.Numeric(2,1), autoincrement = False)
 	analyst_notes = db.Column(db.String(1000), autoincrement = False)
-	user_id = db.Column(db.Integer, db.ForeignKey('userlogin.userid'), nullable = False, autoincrement = False)
+	user_id = db.Column(db.Integer, db.ForeignKey('userlogin.userid'), autoincrement = False)
 
 class suitemodcat(db.Model):
 	suitemod_id = db.Column(db.Integer, db.ForeignKey('suitemodules.suitemodid'), nullable = False, autoincrement = False)
@@ -200,6 +201,6 @@ class vendors_rfi(db.Model):
 	first_quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
 	first_year = db.Column(db.Integer, nullable = False, autoincrement = False)
 	update_date = db.Column(db.DateTime, nullable = False, autoincrement = False, default = datetime.datetime.now)
-	participating_this_quarter = db.Column(db.Integer, autoincrement = False)
-
+	participating_this_quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
+	current_round = db.Column(db.Integer, autoincrement = False)
 
