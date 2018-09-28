@@ -2,11 +2,10 @@
 {% block title %} {{ title }} {% endblock %}
 {% block content %}
 
+	{% from "_macro.html" import render_field %}
+
    <a href={{ urllib_parse_quote( url_for('rfi') + vendor_name) }}>{{ vendor_name }} Portal</a>
 
-   <h2>{{ vendor_name }}</h2>
-
-   <h4>{{ module_name}} </h4>
 
    <head>
 	<style>
@@ -20,20 +19,56 @@
 	th {
 	    text-align: center;
 	}
+
+
 	</style>
 	</head>
 	<body>
 
+	<script>
+	function SelectDefaultSS(variable_id, ss){ //this function sets the default value of each SS to the current one. At first, all of them will be None.
+		if (ss == ""){
+			document.getElementById(variable_id).selectedIndex = 0;
+		}
+		else {
+			document.getElementById(variable_id).selectedIndex = parseInt(ss) + 1;
+		}
+	}
+	</script>
 
+<script>
+		$(document).ready(function(){
+			$("#submit_button").click(function(){
+				alert("Text: " + $("#test").text());
+			});
+		});
+		</script>
+		
+		<p id="test">This is some <b>bold</b> text in a paragraph.</p>
+
+
+	<form action="" method="POST">
 	<table style="width:100%">
-	    <tr>
-	        {% for item in quarters_header %}
-	            <th colspan="{{ item[1]|length }}">Q{{ item[0][1] }} {{ item[0][0] }}</th>
-	        {% endfor %}
-	        <th colspan="5"> Q4 18</th>
+		<tr>
+			<th colspan="3">
+				{{ vendor_name }} - {{ module_name}}
+			</th>
+	        {% for item in yq_headers %}
+	            <th colspan="{{ item[1] }}">Q{{ item[0][1] }} {{ item[0][0] }}</th>
+			{% endfor %}
+			{% if participating_this_quarter == 1 %}
+				<th colspan="{{ 5 * current_round }}">Q{{current_quarter}} {{current_year}}</th>
+			{% endif %}
+			<th colspan="2">
+				<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+			{% if participating_this_quarter == 1 %}					
+				<button id="submit_button" type="submit" class="btn btn-primary">Submit updates</button>
+			{% endif %}
+			</th>
 	    </tr>
 	    <tr>
-	        {% for item in columns_header %}
+			<th>Element</th><th>Specification</th><th>Example Scoring</th>
+	        {% for item in yqr_headers %}
 	            {% if item[1] == 5 and item[0][2] == 1 %}
 	                <th>Self-Score</th>
 	            {% elif item[1] == 5 and item[0][2] == 2 %}
@@ -53,42 +88,109 @@
 	            {% elif item[1] == 9 and item[0][2] == 2 %}
 	                <th>Analyst Notes (2)</th>
 	            {% endif %}
-	        {% endfor %}
-	        <th>Self-Score</th>
-	        <th>Self-Description</th>
-	        <th>Attachment</th>
-	        <th>SM score</th>
-	        <th>Analyst Notes</th>
-	    </tr>
-	    {% if rfielements_info_show %}
-	        {% for row in rfielements_info_show %}
-	            <tr>
-	                {% for item in row %}
-	                    {% if item != None %}
-	                        <td>{{ item }}</td>
-	                    {% else %}
-	                        <td></td>
-	                    {% endif %}
-	                {% endfor %}
-	                <form>
-	               		<td><select name="cars">
-	               			<option value=""></option>
-  							<option value="0">0</option>
-  							<option value="1">1</option>
-  							<option value="2">2</option>
-  							<option value="3">3</option>
-  							<option value="4">4</option>
-  							<option value="5">5</option>
-							</select></td>
-	               		<td><textarea name="message" rows="5" cols="30">Self-Description {{row[0]}}</textarea></td>
-	               		<td><input type="text" name="firstname3" value="tbd {{row[0]}}"></td>
-	               		<td></td>
-	               		<td></td>
-	            	</form>
-	            </tr>
+			{% endfor %}
+			{% if participating_this_quarter == 1 %}
+	        	<th>Self-Score</th>
+	        	<th>Self-Description</th>
+	        	<th>Attachment</th>
+	        	<th>SM score</th>
+				<th>Analyst Notes</th>
+			{% endif %}
+			{% if current_round == 2 %}
+				<th>Self-Score (2)</th>
+				<th>Self-Description (2)</th>
+				<th>Attachment</th>
+				<th>SM score (2)</th>
+				<th>Analyst Notes (2)</th>
+			{% endif %}
+			<th>Current Self-Description</th>
+			<th>Current Self-Score</th>
+		</tr>
+	    {% if info %}
+			{% for row in info %}
+				{% if row is string %}
+					<tr>
+						<th colspan="{{ width }}">{{ row }}</th>
+					</tr>
+				{% else %}
+	            	<tr>
+	                	{% for item in row[0] %}
+	                    	{% if item != None %}
+	                        	<td>{{ item }}</td>
+	                    	{% else %}
+	                        	<td></td>
+	                    	{% endif %}
+						{% endfor %}
+						{% if participating_this_quarter == 1 and current_round == 1 %}
+							<td>
+								<select name = "ss-1-{{row[1]}}" id = "ss-1-{{row[1]}}">
+									<option value=></option>
+									<option value=0>0</option>
+									<option value=1>1</option>
+									<option value=2>2</option>
+									<option value=3>3</option>
+									<option value=4>4</option>
+									<option value=5>5</option>
+								</select>
+								<script>
+									SelectDefaultSS("ss-1-{{row[1]}}", "{{row[2][0]}}" );
+								</script>
+								
+							</td>
+								{% if row[2][1] == None %}   
+									<td><textarea name="sd-1-{{row[1]}}" rows="5" cols="30"></textarea></td>
+								{% else %}
+									<td><textarea name="sd-1-{{row[1]}}" rows="5" cols="30">{{row[2][1]}}</textarea></td>
+								{% endif %}
+								<td><input type="text" name="firstname3" value="{{row[2][2]}}"></td>
+	               				<td>{{row[2][3]}}</td>
+	               				<td>{{row[2][4]}}</td>
+						{% elif participating_this_quarter == 1 and current_round == 2 %}
+							<td></td>
+						{% endif %}
+					</tr>
+				{% endif %}
 	        {% endfor %}
 	    {% endif %}
 	</table>
+</form>
+
+
+<script>
+	$(document).ready(function() {
+		
+		
+		
+		var ajax_modified_smceids = [];
+		$('select').on('change', function(){
+			console.log(jQuery.inArray(this.id.split("-")[2], ajax_modified_smceids));
+				
+			if (jQuery.inArray(this.id.split("-")[2], ajax_modified_smceids) == -1){ //it's -1 when it is not in the array already
+			ajax_modified_smceids.push(this.id.split("-")[2]);
+			alert(ajax_modified_smceids);
+			}
+			console.log(ajax_modified_smceids);
+			console.log("{{ participating_this_quarter }}");
+		});
+
+		//function ajax_modified_smceids(){
+			$.ajax({
+				url: '/_test',
+				data: {key: 'data from jquery'}, //$('ajax_modified_smceids').serialize(),
+				type: 'POST',
+				succes: function(response) {
+					alert("success");
+					console.log(response);
+				},
+				error: function(error) {
+					alert("error")
+					console.log(error);
+				}
+			});
+		//}	
+	});
+
+</script>
 
 
 

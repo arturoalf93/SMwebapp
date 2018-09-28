@@ -1,5 +1,5 @@
 from wtforms import Form
-from wtforms import StringField, TextField, PasswordField, TextAreaField
+from wtforms import StringField, TextField, PasswordField, TextAreaField, IntegerField, DecimalField, SubmitField, FileField, SelectField
 from wtforms.fields.html5 import EmailField
 from wtforms import HiddenField #for HoneyPot
 from wtforms import validators
@@ -26,8 +26,6 @@ class CommentForm(Form):
 	comment = TextAreaField('Comment below')
 	honeypot = HiddenField('', [ length_honeypot ])
 
-
-
 class LoginForm(Form):
 	username = StringField('Username',
 		[
@@ -39,8 +37,6 @@ class LoginForm(Form):
 		 validators.Required(message = 'Password is a requirede field!')
 		])
 	honeypot = HiddenField('', [ length_honeypot ])
-
-
 
 class CreateForm(Form):
 	username = TextField('Username', 
@@ -64,6 +60,13 @@ class CreateForm(Form):
 		user = userstest.query.filter_by(username = username).first()
 		if user is not None:
 			raise validators.ValidationError('Username is already registered')
+
+class ElementForm(Form):
+	ss = SelectField('', choices=[(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)], coerce = int) #find out how choices work
+	sd = StringField('sd') #find out how to set maxlenght
+	at = FileField('at')
+	sm = DecimalField('sm', places = 1)
+	an = StringField('an')
 
 
 
