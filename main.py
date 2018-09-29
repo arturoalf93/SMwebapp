@@ -289,6 +289,9 @@ def rfi(vendor_name, module_name):
 
 		print('smce_ids_list', smce_ids_list)
 
+		last_provider_submission = rfielements.query.filter_by(vendor_id = vendorid).filter(rfielements.smce_id.in_(smce_ids_list)).order_by(desc(rfielements.update_date)).add_columns(rfielements.update_date, rfielements.user_id).first()[1:] #[date, user_id]
+		print('last_provider_submission', last_provider_submission)
+
 		print('ids_list[0]', ids_list[0])
 
 		names_list = []
@@ -469,6 +472,7 @@ def rfi(vendor_name, module_name):
 					elif request.form['sd-' + str(current_round) + '-' + str(item1[1])] != "" and item1[1+current_round][1] != request.form['sd-' + str(current_round) + '-' + str(item1[1])]: #if the SD has changed
 						new_sd = request.form['sd-' + str(current_round) + '-' + str(item1[1])]
 						change = 1
+					else: new_sd = item1[1+current_round][1] #just in case there is a change in SD, it's not really a new S
 
 					if change == 1:
 						element_row = rfielements(vendor_id = vendorid, smce_id = item1[1], quarter = current_quarter, year = current_year, round = current_round, self_score = new_ss, self_description = new_sd,  attachment_id = None, sm_score = item1[1+current_round][3], analyst_notes = item1[1+current_round][4], user_id = None)
@@ -488,7 +492,7 @@ def rfi(vendor_name, module_name):
 			return redirect(urllib.parse.quote( url_for(request.endpoint) + vendor_name))
 
 
-
+		'''
 		rfielements_info=[]
 		quarters_header = set()
 
@@ -542,6 +546,7 @@ def rfi(vendor_name, module_name):
 
 		print('quarters_header', quarters_header)
 		print('columns_header', columns_header)
+		'''
 
 		return render_template('rfi:vendor:module.html', title = title, vendor_name = vendor_name, module_name = module_name, urllib_parse_quote = urllib.parse.quote, 
 		info = info, yq_headers = yq_headers, yqr_headers = yqr_headers, width = width, current_quarter = current_quarter, current_year = current_year,
