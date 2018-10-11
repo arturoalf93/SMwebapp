@@ -4,125 +4,335 @@
 
 	{% from "_macro.html" import render_field %}
 
-   <a href={{ urllib_parse_quote( url_for('rfi') + vendor_name) }}>{{ vendor_name }} Portal</a>
+<script>
+function SelectDefaultSS(variable_id, ss){ //this function sets the default value of each SS to the current one. At first, all of them will be None.
+	if (ss == ""){
+		document.getElementById(variable_id).selectedIndex = 0;
+	}
+	else {
+		document.getElementById(variable_id).selectedIndex = parseInt(ss) + 1;
+	}
+}
+</script>
+
+<script src="{{ url_for('static', filename='js/main_header_fixed.js') }}"></script>
+<script src="{{ url_for('static', filename='js/show_more.js') }}"></script>   <!--https://codepen.io/maxds/pen/jgeoA-->
+
+
+
+
 
 
    <head>
 	<style>
-	table, th, td {
-	    border: 1px solid black;
-	    border-collapse: collapse;
+
+	body{
+    	padding-top:0px;
+
 	}
-	th, td {
-	    padding: 5px;
+
+	.averages_table_div { 
+		background-color: ;
+
 	}
-	th {
+
+
+	table.averages_table, table.averages_table th, table.averages_table td {
+		border-radius: 3px;
+    	-moz-border-radius: 3px;
+    	padding: 3px;
+	}
+
+	table.averages_table th, table.averages_table td {
+		background-color: ;
+	}
+
+	tr.element_row:nth-child(even) { background-color: #f2f2f2; }
+
+
+
+
+	table {
+	    border-collapse:separate;
+	    border-spacing: 0;
+	    border: none;
+	}
+
+	table.main_table, table.main_table th, table.main_table td {
+		border-radius: 3px;
+    	-moz-border-radius: 3px;
+    	padding: 3px;
+	}
+
+
+	th, .centered_class {
 	    text-align: center;
+	    border: 1px solid black;
+
 	}
+
+	td {
+		border-bottom: 1px solid black;
+		border-top: 1px solid black;
+		position: relative; /* in order to make the textareas able to expand to the hole td */
+	}
+
+	.element_row {
+		display: none;
+	}
+
+	table.floatThead-table { /* main header */
+    border-top: none;
+    border-bottom: none;
+    background-color: #ffffff;
+    padding-top: 0px;
+    }
+
+
+
+    div.sticky {
+  		position: -webkit-sticky;
+  		position: sticky;
+  		top: 0;
+  		padding: 0px;
+  		background-color: white;
+  		z-index: 2;
+	}
+
+
+	.morecontent span { display: none; }
+	.morelink { display: block; }
+
+
+	textarea {
+		width: 100%;
+	 	top: 0; left: 0; right: 0; bottom: 0;
+	 	position: absolute;
+		resize: none;
+		-webkit-box-sizing: border-box; /* <=iOS4, <= Android  2.3 */
+	      -moz-box-sizing: border-box; /* FF1+ */
+	           box-sizing: border-box; /* Chrome, IE8, Opera, Safari 5.1*/
+	}
+
+	/*Overriding category row colors after stripe color bootrstap    https://stackoverflow.com/questions/25043759/overriding-bootstrap-table-striped-css */
+	/*table.table.table-striped tr.category-row th {
+    	background-color: #e6f9ff;
+    }*/
+	
+	/*Overriding row colors after stripe color bootrstap*/
+	/*
+	.table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th {
+  		 background-color: #ffe6ff;
+ 	}
+ 	*/
+
+ 	tr.element_row:nth-child(even) { background-color: #f2f2f2; }
+
+ 	.vendor_module_header{
+ 		background-color: #59478c;
+ 		color: #ffffff;
+ 		font-size: 14pt;
+ 	} /*#ffcccc; }*/
+
+ 	.qy_header{
+ 		background-color: #8977bb;
+ 		color: #ffffff;
+ 		font-size: 14pt;
+ 	}
+
+ 	.button_cells_header{
+ 
+ 	}
+
+ 	/*
+ 	.element_header{ background-color: #ffe6e6; }
+ 	.element_provider_header{ background-color: #ccf3ff; }
+ 	.element_analyst_header{ background-color: #ffd699; }
+ 	.current_ss_header{ background-color: #ffff99; }
+ 	.current_sm_header{ background-color: #ccffcc; }
+ 	*/
+
+ 	.element_header, .specification_header, .es_header, .element_provider_header, .element_analyst_header, .current_ss_header, .current_sm_header{
+ 	 	background-color: #59478c;
+ 		color: #ffffff;	
+ 	}
+
+ 	.current_ss_header, .current_sm_header {
+ 		font-size: 9pt;
+ 	}
+
+
+ 	.category-row{
+ 		background-color: #d9d9d9;
+ 		cursor: pointer;
+
+ 	}
+ 	.ss_input, textarea, .att_input{ background-color: #e6e6e6; }
+
+ 	/*
+ 	.current_ss{ background-color: #ffffcc; }
+ 	.current_sm{ background-color: #e6ffe6; }
+ 	*/
 
 
 	</style>
 	</head>
 	<body>
 
-	<script>
-	function SelectDefaultSS(variable_id, ss){ //this function sets the default value of each SS to the current one. At first, all of them will be None.
-		if (ss == ""){
-			document.getElementById(variable_id).selectedIndex = 0;
-		}
-		else {
-			document.getElementById(variable_id).selectedIndex = parseInt(ss) + 1;
-		}
-	}
-	</script>
+	<div><!--class="sticky"-->
+		 <a href={{ urllib_parse_quote( url_for('rfi') + vendor_name) }}>{{ vendor_name }} Portal</a>
+	 </div>
+  	 <div class="averages_table_div">
+  	 	<br>
+  	 	<table class="averages_table table-striped table-bordered table-hover" align="center">
+  	 		<tr>
+  	 			<th>Module Categores</th><th>Current Self-Score Average</th><th>Last Quarter Provider Average</th><th>Current SM Score Average</th><th>Current Benchmark Average</th>
+  	 		</tr>
+  	 		{% for item1 in summary_table %}
+  	 			<tr>
+  	 				{% for item2 in item1 %}
+  	 					{% if item2 is number and item2 % 1 != 0 %}
+  	 						<td class="centered_class">{{'%0.2f'|format(item2|float) }}</td>
+  	 					{% elif item2 is number and item2 % 1 == 0 %}
+  	 						<td class="centered_class">{{ item2|int }}</td>
+  	 					{% else %}
+  	 						<td class="centered_class">{{item2}}</td>
+  	 					{% endif %}
+  	 				{% endfor %}
+  	 			</tr>
+  	 		{% endfor %}
+  	 	</table>
+  	 	<br>
+  	 </div>
+  	 
 
-<script>
-		$(document).ready(function(){
-			$("#submit_button").click(function(){
-				alert("Text: " + $("#test").text());
-			});
-		});
-		</script>
-		
-		<p id="test">This is some <b>bold</b> text in a paragraph.</p>
-
+  	 <script>
+ 	   $("#average_score_row").hover(function() {
+	        $(this).css('cursor','pointer').attr('title', 'Average score across all elements, not across all categories');
+	    }, function() {
+	        $(this).css('cursor','auto');
+	    });
+  	 </script>
 
 	<form action="" method="POST">
-	<table style="width:100%">
-		<tr>
-			<th colspan="3">
-				{{ vendor_name }} - {{ module_name}}
-			</th>
-	        {% for item in yq_headers %}
-	            <th colspan="{{ item[1] }}">Q{{ item[0][1] }} {{ item[0][0] }}</th>
-			{% endfor %}
-			{% if participating_this_quarter == 1 %}
-				<th colspan="{{ 5 * current_round }}">Q{{current_quarter}} {{current_year}}</th>
-			{% endif %}
-			<th colspan="2">
-				<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-			{% if participating_this_quarter == 1 %}					
-				<button id="submit_button" type="submit" class="btn btn-primary">Submit updates</button>
-			{% endif %}
-			</th>
-	    </tr>
-	    <tr>
-			<th>Element</th><th>Specification</th><th>Example Scoring</th>
-	        {% for item in yqr_headers %}
-	            {% if item[1] == 5 and item[0][2] == 1 %}
-	                <th>Self-Score</th>
-	            {% elif item[1] == 5 and item[0][2] == 2 %}
-	                <th>Self-Score (2)</th>
-	            {% elif item[1] == 6 and item[0][2] == 1 %}
-	                <th>Self-Description</th>
-	            {% elif item[1] == 6 and item[0][2] == 2 %}
-	                <th>Reasoning</th>
-	            {% elif item[1] == 7 %}
-	                <th>Attachments/Supporting Docs and Location/Link</th>
-	            {% elif item[1] == 8 and item[0][2] == 1 %}
-	                <th>SM Score</th>
-	            {% elif item[1] == 8 and item[0][2] == 2 %}
-	                <th>SM Score (2)</th>
-	            {% elif item[1] == 9 and item[0][2] == 1 %}
-	                <th>Analyst Notes</th>
-	            {% elif item[1] == 9 and item[0][2] == 2 %}
-	                <th>Analyst Notes (2)</th>
-	            {% endif %}
-			{% endfor %}
-			{% if participating_this_quarter == 1 %}
-	        	<th>Self-Score</th>
-	        	<th>Self-Description</th>
-	        	<th>Attachment</th>
-	        	<th>SM score</th>
-				<th>Analyst Notes</th>
-			{% endif %}
-			{% if current_round == 2 %}
-				<th>Self-Score (2)</th>
-				<th>Self-Description (2)</th>
-				<th>Attachment</th>
-				<th>SM score (2)</th>
-				<th>Analyst Notes (2)</th>
-			{% endif %}
-			<th>Current Self-Description</th>
-			<th>Current Self-Score</th>
-		</tr>
+	<table class="sticky-header main_table" style="width:4500"> <!--style="width:100%">-->
+		    <colgroup>
+      			<col style="width: 300px;">
+      			<col style="width: 600px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 300px;">
+      			<col style="width: 100px;">
+      			<col style="width: 100px;">
+   			 </colgroup>
+		<thead>
+			<tr>
+				<th class="vendor_module_header" colspan="3">
+					{{ vendor_name }} - {{ module_name}}
+				</th>
+		        {% for item in yq_headers %}
+		            <th class="qy_header" colspan="{{ item[1] }}">Q{{ item[0][1] }} {{ item[0][0] }}</th>
+				{% endfor %}
+				{% if  status == 'N' or status == 'R' %}
+					<th class="qy_header" colspan="{{ 5 * current_round }}">Q{{current_quarter}} {{current_year}}</th>
+				{% endif %}
+				<th class="button_cells_header" colspan="2">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+				{% if status == 'N' or status == 'R' %}					
+					<button id="submit_button" name="submit_button" type="submit" class="btn btn-success">Submit updates</button>
+				{% endif %}
+				</th>
+		    </tr>
+		    <tr>
+				<th class="element_header">Element</th>
+				<th class="specification_header">Specification</th>
+				<th class="es_header">Example Scoring</th>
+		        {% for item in yqr_headers %}
+		            {% if item[1] == 5 and item[0][2] == 1 %}
+		                <th class="element_provider_header">Self-Score</th>
+		            {% elif item[1] == 5 and item[0][2] == 2 %}
+		                <th class="element_provider_header">Self-Score (2)</th>
+		            {% elif item[1] == 6 and item[0][2] == 1 %}
+		                <th class="element_provider_header">Self-Description</th>
+		            {% elif item[1] == 6 and item[0][2] == 2 %}
+		                <th class="element_provider_header">Reasoning</th>
+		            {% elif item[1] == 7 %}
+		                <th class="element_provider_header">Attachments/Supporting Docs and Location/Link</th>
+		            {% elif item[1] == 8 and item[0][2] == 1 %}
+		                <th class="element_analyst_header">SM Score</th>
+		            {% elif item[1] == 8 and item[0][2] == 2 %}
+		                <th class="element_analyst_header">SM Score (2)</th>
+		            {% elif item[1] == 9 and item[0][2] == 1 %}
+		                <th class="element_analyst_header">Analyst Notes</th>
+		            {% elif item[1] == 9 and item[0][2] == 2 %}
+		                <th class="element_analyst_header">Analyst Notes (2)</th>
+		            {% endif %}
+				{% endfor %}
+				{% if status == 'N' or status == 'R' %}
+		        	<th class="element_provider_header">Self-Score</th>
+		        	<th class="element_provider_header">Self-Description</th>
+		        	<th class="element_provider_header">Attachment</th>
+		        	<th class="element_analyst_header">SM Score</th>
+					<th class="element_analyst_header">Analyst Notes</th>
+				{% endif %}
+				{% if current_round == 2 %}
+					<th class="element_provider_header">Self-Score (2)</th>
+					<th class="element_provider_header">Self-Description (2)</th>
+					<th class="element_provider_header">Attachment</th>
+					<th class="element_analyst_header">SM Score (2)</th>
+					<th class="element_analyst_header">Analyst Notes (2)</th>
+				{% endif %}
+				<th class="current_ss_header">Current Self-Score</th>
+				<th class="current_sm_header">Current SM Score</th>
+			</tr>
+		</thead>
+		<tbody>
 	    {% if info %}
 			{% for row in info %}
-				{% if row is string %}
-					<tr>
-						<th colspan="{{ width }}">{{ row }}</th>
-					</tr>
+				{% if row|length == 2 %} <!--len == 2 because category items in the list will have two elements: [category_name, ?category_name_id?]-->
+					{% if status == 'N' or status == 'R' %}
+						<tr class="category-row category-{{row[1]}}">
+							<th colspan="{{ width + 5*current_round + 2 }}">{{ row[0] }}
+							</th>
+						</tr>
+					{% else %}
+						<tr class="category-{{row[1]}}">
+							<th colspan="{{ width + 2 }}">{{ row[0] }}
+							</th>
+						</tr>
+					{% endif %}
+	    	
+
+<script>
+	$(document).ready(function() {
+		$('.category-{{row[1]}}').on('click', function(){
+			$('.element-{{row[1]}}').fadeToggle(200);
+		});
+	});				
+</script>
+
 				{% else %}
-	            	<tr>
+	            	<tr class="element-{{row[5]}} element_row">
 	                	{% for item in row[0] %}
 	                    	{% if item != None %}
-	                        	<td>{{ item }}</td>
+	                        	<td>
+	                        		<span class="more">{{ item }} <!--more for the Show more/Show less thing-->
+	                        		</span>
+	                        	</td>
 	                    	{% else %}
 	                        	<td></td>
 	                    	{% endif %}
 						{% endfor %}
-						{% if participating_this_quarter == 1 and current_round == 1 %}
-							<td>
+						{% if (status == 'N' or status == 'R') and current_round == 1 %}
+							<td class="ss_input">
 								<select name = "ss-1-{{row[1]}}" id = "ss-1-{{row[1]}}">
 									<option value=></option>
 									<option value=0>0</option>
@@ -138,29 +348,35 @@
 								
 							</td>
 								{% if row[2][1] == None %}   
-									<td><textarea name="sd-1-{{row[1]}}" rows="5" cols="30"></textarea></td>
+									<td class="sd_input"><textarea name="sd-1-{{row[1]}}" rows="5" cols="30"></textarea></td>
 								{% else %}
-									<td><textarea name="sd-1-{{row[1]}}" rows="5" cols="30">{{row[2][1]}}</textarea></td>
+									<td class="sd_input"><textarea name="sd-1-{{row[1]}}" rows="5" cols="30">{{row[2][1]}}</textarea></td>
 								{% endif %}
-								<td><input type="text" name="firstname3" value="{{row[2][2]}}"></td>
-	               				<td>{{row[2][3]}}</td>
-	               				<td>{{row[2][4]}}</td>
-						{% elif participating_this_quarter == 1 and current_round == 2 %}
+								<td class="att_input">att: {{row[2][2]}}</td>
+								{% if row[2][3] != None %}<td>{{row[2][3]}}</td>{% else %}<td></td>{% endif %}
+								{% if row[2][4] != None %}<td>{{row[2][4]}}</td>{% else %}<td></td>{% endif %}
+						{% elif (status == 'N' or status == 'R') and current_round == 2 %}
+							<td></td>
+						{% endif %}
+						{% if row[4][0] != None %}<td class="current_ss">{{row[4][0]}}</td>{% else %}<td></td>{% endif %}
+						{% if row[4][1] != None and row[4][1] % 1 != 0 %}
+							<td class="current_sm">{{row[4][1]}}</td>
+						{% elif row[4][1] != None and row[4][1] % 1 == 0 %}
+							<td class="current_sm">{{ row[4][1]|int }}</td>
+						{% else %}
 							<td></td>
 						{% endif %}
 					</tr>
 				{% endif %}
 	        {% endfor %}
 	    {% endif %}
+	    </tbody>
 	</table>
 </form>
 
-
+<!--
 <script>
 	$(document).ready(function() {
-		
-		
-		
 		var ajax_modified_smceids = [];
 		$('select').on('change', function(){
 			console.log(jQuery.inArray(this.id.split("-")[2], ajax_modified_smceids));
@@ -172,25 +388,10 @@
 			console.log(ajax_modified_smceids);
 			console.log("{{ participating_this_quarter }}");
 		});
-
-		//function ajax_modified_smceids(){
-			$.ajax({
-				url: '/_test',
-				data: {key: 'data from jquery'}, //$('ajax_modified_smceids').serialize(),
-				type: 'POST',
-				succes: function(response) {
-					alert("success");
-					console.log(response);
-				},
-				error: function(error) {
-					alert("error")
-					console.log(error);
-				}
-			});
-		//}	
 	});
 
 </script>
+-->
 
 
 

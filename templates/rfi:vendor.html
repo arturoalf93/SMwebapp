@@ -5,11 +5,36 @@
 <h1>{{ title }} Portal</h1>
 <br>
 <h2>RFI Submissions</h2>
+    <br> 
 
-{% for item in module_names %}
-    <a href={{ urllib_parse_quote( url_for(request.endpoint) + vendor_name + '/' + item) }}>{{ item }}</a><br> 
+<table class="table table-striped" align="center">
+	<thead>
+		<tr>
+			<th colspan="2">Module</th>
+			<th>Status</th>
+			<th>Round</th>
+			<th>Last submission</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for item in module_status_round %}
+			<tr>
+				<td><a href={{ urllib_parse_quote( url_for(request.endpoint) + vendor_name + '/' + item[0]) }}>{{ item[0] }}</a></td>
+				<td><button id="go-{{item[0]}}" name="go-{{item[0]}}" type="submit" class="btn btn-primary btn-block">Go to RFI</button></td>
+				<td>{{ item[1] }}</td>
+				<td>{{ item[2] }}</td>
+				<td>On [date] ([Q][Y]) by [user_name]</td>
+					{% if item[1] == 'New' or item[1] == 'Refreshing' %}
+						<td><button id="finish-{{item[0]}}" name="finish-{{item[0]}}" type="submit" class="btn btn-primary">Finish RFI Submission (Round {{item[2]}}) and notify analyst</button></td>
+					{% else %}
+						<td></td>
+					{% endif%}
+			</tr>
     <!-- <a href={{ url_for(request.endpoint, vendor_name = vendor_name, item = item) }}>{{ item }}</a> --><!-- http://localhost:5000/rfi/Buyer%20Quest?item=Procure+to+Pay maybe helpful in the future. -->
-{% endfor %} 
+		{% endfor %} 
+	</tbody>
+</table>
 <br>
 <h2>Customer References</h2>
 

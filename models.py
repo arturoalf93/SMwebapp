@@ -74,8 +74,9 @@ class category_names(db.Model):
 	category_name = db.Column(db.String(45), nullable = False, autoincrement = False)
 
 class current_quarteryear(db.Model):
-	quarter = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
-	year = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
+	id = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
+	quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
+	year = db.Column(db.Integer, nullable = False, autoincrement = False)
 
 class element_names(db.Model):
 	element_nameid = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = True)
@@ -114,7 +115,18 @@ class rfi(db.Model):
 	year = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
 	invite_date = db.Column(db.DateTime, nullable = False, autoincrement = False, default = datetime.datetime.now)
 
-class rfielements(db.Model):
+class rfielements_analysts(db.Model):
+	vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.vendorid'), primary_key = True, nullable = False, autoincrement = False)
+	smce_id = db.Column(db.Integer, db.ForeignKey('suitemodcatelem.smceid'), primary_key = True, nullable = False, autoincrement = False)
+	quarter = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
+	year = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
+	round = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
+	update_date = db.Column(db.DateTime, primary_key = True, nullable = False, autoincrement = False, default = datetime.datetime.now)
+	sm_score = db.Column(db.Numeric(2,1), autoincrement = False)
+	analyst_notes = db.Column(db.String(1000), autoincrement = False)
+	user_id = db.Column(db.Integer, db.ForeignKey('users.userid'), nullable = False, autoincrement = False)
+
+class rfielements_providers(db.Model):
 	vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.vendorid'), primary_key = True, nullable = False, autoincrement = False)
 	smce_id = db.Column(db.Integer, db.ForeignKey('suitemodcatelem.smceid'), primary_key = True, nullable = False, autoincrement = False)
 	quarter = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
@@ -124,9 +136,7 @@ class rfielements(db.Model):
 	self_score = db.Column(db.Integer, autoincrement = False)
 	self_description = db.Column(db.String(5000), autoincrement = False)
 	attachment_id = db.Column(db.Integer, autoincrement = False)
-	sm_score = db.Column(db.Numeric(2,1), autoincrement = False)
-	analyst_notes = db.Column(db.String(1000), autoincrement = False)
-	user_id = db.Column(db.Integer, db.ForeignKey('userlogin.userid'), autoincrement = False)
+	user_id = db.Column(db.Integer, db.ForeignKey('users.userid'), nullable = False, autoincrement = False)
 
 class suitemodcat(db.Model):
 	suitemod_id = db.Column(db.Integer, db.ForeignKey('suitemodules.suitemodid'), nullable = False, autoincrement = False)
@@ -140,7 +150,8 @@ class suitemodcat(db.Model):
 class suitemodcatelem(db.Model):
 	suitemodcat_id = db.Column(db.Integer, db.ForeignKey('suitemodcat.suitemodcatid'), nullable = False, autoincrement = False)
 	smceid = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = True)
-	rfielements = db.relationship('rfielements')
+	rfielements_analysts = db.relationship('rfielements_analysts')
+	rfielements_providers = db.relationship('rfielements_providers')
 	update_date = db.Column(db.DateTime, primary_key = True, nullable = False, autoincrement = False, default = datetime.datetime.now)
 	element_name_id = db.Column(db.Integer, db.ForeignKey('element_names.element_nameid'), nullable = False, autoincrement = False)
 	quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
@@ -167,25 +178,24 @@ class suites(db.Model):
 	year = db.Column(db.Integer, nullable = False, autoincrement = False)
 	update_date = db.Column(db.DateTime, primary_key = True, nullable = False, autoincrement = False, default = datetime.datetime.now)
 
-class user_types(db.Model):
-	user_typeid = db.Column(db.Integer, nullable = False, autoincrement = True)
-	userlogin = db.relationship('userlogin')
-	user_type = db.Column(db.String(45), primary_key = True, nullable = False, autoincrement = False)
-	privileges = db.Column(db.String(45), autoincrement = False)
-	type_description = db.Column(db.String(500), autoincrement = False)
-
-class userlogin(db.Model):
+class users(db.Model):
 	userid = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
-	rfielements = db.relationship('rfielements')
+	rfielements_analysts = db.relationship('rfielements_analysts')
+	rfielements_providers = db.relationship('rfielements_providers')
 	email = db.Column(db.String(80), nullable = False, autoincrement = False)
-	user_type_id = db.Column(db.Integer, db.ForeignKey('user_types.user_typeid'), nullable = False, autoincrement = False)
+	user_type = db.Column(db.String(7), nullable = False, autoincrement = False)
+	assigned_vendor_id = db.Column(db.Integer, autoincrement = False)
 	password = db.Column(db.String(45), nullable = False, autoincrement = False)
 	update_date = db.Column(db.DateTime, primary_key = True, nullable = False, autoincrement = False)
 	active = db.Column(db.Integer, nullable = False, autoincrement = False)
+	registration_date = db.Column(db.DateTime, nullable = False, autoincrement = False)
+	anonymized = db.Column(db.Integer, nullable = False, autoincrement = False)
+	private = db.Column(db.Integer, nullable = False, autoincrement = False)
 
 class vendors(db.Model):
 	vendorid = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = True)
-	rfielements = db.relationship('rfielements')
+	rfielements_analysts = db.relationship('rfielements_analysts')
+	rfielements_providers = db.relationship('rfielements_providers')
 	vendors_rfi = db.relationship('vendors_rfi')
 	vendor_name = db.Column(db.String(45), nullable = False, autoincrement = False)
 	quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
@@ -198,9 +208,12 @@ class vendors(db.Model):
 class vendors_rfi(db.Model):
 	vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.vendorid'), primary_key = True, nullable = False, autoincrement = False)
 	suitemod_id = db.Column(db.Integer, db.ForeignKey('suitemodules.suitemodid'), primary_key = True, nullable = False, autoincrement = False)
-	first_quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
-	first_year = db.Column(db.Integer, nullable = False, autoincrement = False)
+	quarter = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
+	year = db.Column(db.Integer, primary_key = True, nullable = False, autoincrement = False)
 	update_date = db.Column(db.DateTime, nullable = False, autoincrement = False, default = datetime.datetime.now)
-	participating_this_quarter = db.Column(db.Integer, nullable = False, autoincrement = False)
-	current_round = db.Column(db.Integer, autoincrement = False)
+	status = db.Column(db.String(1), nullable = False, autoincrement = False)
+	current_round = db.Column(db.Integer, nullable = False, autoincrement = False)
+
+
+
 
