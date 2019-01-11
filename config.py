@@ -4,7 +4,7 @@ import sys
 
 try:
 	#emailpwd = os.environ["MY_TEST_EMAIL_PWD"]
-	emailpwd = 'Nomagichere1'
+	emailpwd = '****'
 except KeyError:
 	print ("Please set the environment variable MY_TEST_EMAIL_PWD")
 	sys.exit(1)
@@ -47,7 +47,7 @@ except KeyError:
 
 try:
 	#dbpwd = os.environ["MY_DB_PWD"]
-	dbpwd = 'nomagichere'
+	dbpwd = '****'
 	#dbpwd = '48063a4e'
 except KeyError:
 	print ("Please set the environment variable MY_DB_PWD")
